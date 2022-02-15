@@ -1,0 +1,332 @@
+---
+title: "Dataset Selection and Initial Processing"
+output: 
+  html_notebook:
+    toc: yes
+---
+
+***
+
+Install packages: 
+```{r}
+if (!requireNamespace("BiocManager", quietly = TRUE))
+  install.packages("BiocManager")
+if (!requireNamespace("GEOmetadb", quietly = TRUE))
+  BiocManager::install("GEOmetadb")
+if(!requireNamespace("edgeR", quietly = TRUE))
+  BiocManager::install("edgeR")
+if(!requireNamespace("biomaRt", quietly = TRUE))
+  BiocManager::install("biomaRt")
+
+library(GEOmetadb)
+library(edgeR)
+library(biomaRt)
+```
+
+***
+
+# Cleaning data
+
+<br>
+
+### Downloading data
+
+```{r, message = FALSE, warning=FALSE}
+# Set GSEMatrix to FALSE to get other columns from the GSE records
+gse <- getGEO("GSE161243", GSEMatrix=FALSE)
+```
+
+<br>
+
+### Assessing dataset platform statistics
+
+```{r, message = FALSE, warning=FALSE}
+# Get platform info from GSE161243
+current_gpl <- names(GPLList(gse))[1]
+current_gpl_info <- Meta(getGEO(current_gpl))
+```
+
+**Platform title** : `r current_gpl_info$title`  
+**Submission date** : `r current_gpl_info$submission_date`  
+**Last update** : `r current_gpl_info$last_update_date`  
+**Organism** : `r current_gpl_info$organism`  
+**Number of GEO datasets that use this techology** : `r length(current_gpl_info$series_id)`  
+**Number of GEO samples that use this technology** : `r length(current_gpl_info$sample_id)`   
+
+<br>
+
+### Examining raw data
+
+Get expression data (gene raw counts) from supplementary files:
+```{r, message = FALSE}
+supp_files = getGEOSuppFiles('GSE161243')
+file_names = rownames(supp_files)
+# There is only one supplemental file
+# Set check.names to false so the column names are not automatically reformatted
+cpt1a_exp = read.delim(file_names[1], header=TRUE, check.names=FALSE)
+```
+
+Examine the dataframe:
+```{r}
+colnames(cpt1a_exp)
+```
+*From the GEO description page, I know that the Gene column contains the gene names in HGNC symbols, while the rest of the columns contain gene counts for different sample groups. "X129_S19" and "X130_S20" are control groups for knockdown experiments, and "X135_S24" and "X136_S25" are control groups for overexpression experiments. X132_S21", "X133_S22", and "X134_S23" are experimental groups for CPT1A knockdown, while the last three groups are experimental groups with everexpression of CPT1A.*   
+
+<br>
+
+### Defining sample groups
+
+Rename the dataframe columns to make clearer the sample groups:
+```{r}
+colnames(cpt1a_exp)[2:11] <- c("KD_C1", "KD_C2", "KD_S1", "KD_S2", "KD_S3", "OE_C1", "OE_C2", "OE_S1", "OE_S2", "OE_S3")
+```
+
+Define sample groups:
+```{r}
+# Define sample groups
+samples <- data.frame(cell_type = unlist(lapply(colnames(cpt1a_exp)[2:11], 
+                                         FUN=function(x){substr(x, 1, 4)})))
+samples <- cbind(samples, sample_number = c(1:10))
+rownames(samples) <- colnames(cpt1a_exp)[2:11]
+samples
+```
+
+<br>
+
+### Examining duplicated genes
+
+**Total number of genes listed**: `r length(cpt1a_exp$Gene)`  
+**Number of unique genes**: `r length(unique(cpt1a_exp$Gene))`  
+
+Get a list of duplicated genes: 
+```{r}
+summarized_gene_counts <- sort(table(cpt1a_exp$Gene), decreasing=TRUE)
+summarized_gene_counts[which(summarized_gene_counts > 1)]
+```
+There is no duplicated genes.  
+
+Filter out genes with low counts: 
+```{r, results="hide"}
+# Translate out counts into counts per million using the edgeR package
+cpms = cpm(cpt1a_exp[, 2:11])
+rownames(cpms) <- cpt1a_exp[, 1]
+# Get rid of low counts
+keep = rowSums(cpms > 1) >= 10
+cpt1a_exp_filtered = cpt1a_exp[keep, ]
+```
+
+**Number of removed genes**: `r length(cpt1a_exp$Gene) - dim(cpt1a_exp_filtered)[1]`  
+**Number of remaining genes**: `r dim(cpt1a_exp_filtered)[1]`  
+
+***
+
+<br> <br>
+
+# Applying TMM normalization
+
+```{r}
+# Transform dataframe counts to matrix
+filtered_data_matrix <- as.matrix(cpt1a_exp_filtered[, 2:11])
+rownames(filtered_data_matrix) <- cpt1a_exp_filtered$Gene
+# Create a container for expression count data
+d = DGEList(counts=filtered_data_matrix, group=samples$cell_type)
+# Apply normalization
+d = calcNormFactors(d) 
+normalized_counts <- cpm(d)
+```
+
+<br>
+
+### Creating density plots
+```{r}
+# Calculate density functions for each sample group
+ori_log2cpm <- log2(cpm(cpt1a_exp_filtered[,2:11]))
+normalized_log2cpm <- log2(normalized_counts)
+ori_counts_density <- apply(ori_log2cpm, 2, density)
+normalized_counts_density <- apply(normalized_log2cpm, 2, density)
+# Calculate the limits across all the samples
+xlim <- 0; ylim <- 0
+for (i in seq_along(length(ori_counts_density))) {
+  xlim <- range(c(xlim, ori_counts_density[[i]]$x))
+  ylim <- range(c(ylim, ori_counts_density[[i]]$y))
+}
+for (i in seq_along(length(normalized_counts_density))) {
+  xlim <- range(c(xlim, normalized_counts_density[[i]]$x))
+  ylim <- range(c(ylim, normalized_counts_density[[i]]$y))
+}
+
+# Define plot parameters
+cols <- rainbow(length(ori_counts_density))
+ltys <- rep(1, length(ori_counts_density))
+
+# Make 2 plots side-by-side
+par(mfrow=c(1, 2))
+
+# Plot the density plot before normalization
+
+# Plot the first density plot to initialize the plot
+plot(ori_counts_density[[1]], xlim=xlim, ylim=ylim, type="n", 
+     ylab="Smoothing density of log2-CPM", cex.lab = 0.8, 
+     main="Density before normalizarion")
+
+# Plot each line
+for (i in 1:length(ori_counts_density)) {
+  lines(ori_counts_density[[i]], col=cols[i], lty=ltys[i])
+}
+
+# Create legend
+legend("topright", colnames(ori_log2cpm), 
+       col=cols, lty=ltys, cex=0.75,
+       merge = TRUE)
+
+# Plot the density plot after normalization
+
+# Initialize the plot
+plot(normalized_counts_density[[1]], xlim=xlim, ylim=ylim, type="n", 
+     ylab="Smoothing density of log2-CPM", cex.lab = 0.8, 
+     main="Density after normalizarion")
+
+# Plot each line
+for (i in 1:length(normalized_counts_density)) {
+  lines(normalized_counts_density[[i]], col=cols[i], lty=ltys[i])
+}
+
+# Create legend
+legend("topright", colnames(normalized_log2cpm), 
+       col=cols, lty=ltys, cex=0.75,
+       merge = TRUE)
+```
+***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization.  
+
+*The density plot only changes slightly after normalization. This could be because the gene expression data was collected with low technical variation, or because the technical variations have already been corrected for in some ways by the authors.*  
+
+<br>
+
+### Creating boxplots
+```{r}
+# Make 2 plots side-by-side
+par(mfrow=c(1, 2))
+
+# Draw first plot (before normalization)
+boxplot(ori_log2cpm, xlab = "Samples", ylab = "log2 CPM", 
+ las = 2, cex = 0.5, cex.lab = 0.5,
+ cex.axis = 0.5, main = "Original CPT1A RNASeq Samples")
+# Draw the median on each box plot
+abline(h = median(apply(ori_log2cpm, 2, median)), 
+ col = "green", lwd = 0.6, lty = "dashed")
+
+# Draw second plot (after normalization)
+boxplot(normalized_log2cpm, xlab = "Samples", ylab = "log2 CPM", 
+ las = 2, cex = 0.5, cex.lab = 0.5,
+ cex.axis = 0.5, main = "Normalized CPT1A RNASeq Samples")
+# Draw the median on each box plot
+abline(h = median(apply(normalized_log2cpm, 2, median)), 
+ col = "green", lwd = 0.6, lty = "dashed")
+```
+***Figure 2. Boxplots of gene expression data (log2-cpm) before and after TMM normalization.*** Left: boxplot of CPT1A experiments gene expression before TMM normalization. Right: boxplot of CPT1A experiments gene expression after TMM normalization. Green dashed lines indicate the median of the all sample data.  
+
+*The change in gene expression distributions is more obvious in the boxplots. The median values of normalized sample groups data are better aligned to the green dashed line (median of the entire data set).*
+
+<br>
+
+### Inspecting sample separation (MDS plot)
+```{r}
+plotMDS(d, labels=rownames(samples),
+ col = rainbow(length(unique(samples$cell_type)))[factor(samples$cell_type)])
+```
+***Figure 3. The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance.*** Different colors indicate different cell types.  
+
+*The sample groups data appear to be well separated. Sample groups of the same cell type are close to each other. This means that there is low technical variation in the expression data, and the greater distances between samoples of different cell_types are likely due to biological variations.*  
+
+***
+
+<br> <br>
+
+# Mapping to HGNC Symbols
+
+The gene ids that come with the data set seem to be in HGNC symbols: 
+```{r}
+head(cpt1a_exp_filtered$Gene)
+```
+
+Check whether there is any ID in there that is not a HGNC symbol: 
+```{r, results="hide"}
+mart <- useMart("ensembl")
+mart = useDataset("hsapiens_gene_ensembl",mart=mart)
+
+# Create an rds containing HGNC symbols 
+hgnc_symbols_stash <- "hgnc_symbols.rds"
+if(file.exists(hgnc_symbols_stash)){
+ hgnc_symbols <- readRDS(hgnc_symbols_stash)
+} else {
+ hgnc_symbols <- getBM(attributes = c("hgnc_symbol"), 
+ filters = c("hgnc_symbol"), 
+ values = rownames(normalized_counts),
+ mart = mart)
+ saveRDS(hgnc_symbols, hgnc_symbols_stash)
+}
+```
+
+Merge the mapped IDs to dataframe:
+```{r, results='hide'}
+# Add a column of gene ids to normalized_counts
+normalized_counts <- cbind(ori_id = rownames(normalized_counts), normalized_counts)
+normalized_counts_annot <- merge(hgnc_symbols, normalized_counts,
+                                 by.x = 1, by.y = 0, all.y=TRUE)
+```
+
+Find the missing gene identifiers:
+```{r, results='hide'}
+hgnc_id_missing_gene <- normalized_counts_annot$ensembl_gene_id[
+  which(is.na(normalized_counts_annot$hgnc_symbol))]
+```
+**Number of missing gene IDs**: `r length(hgnc_id_missing_gene)`
+
+All IDs from the original data associate are unique HGNC symbols:
+```{r}
+# Check if all original IDs are HGNC symbols
+all(normalized_counts_annot$hgnc_symbol == normalized_counts_annot$ori_id)
+
+# Check if all original IDs are unique
+length(normalized_counts_annot$ori_id) == length(unique(normalized_counts_annot$ori_id))
+
+# Check the number of genes in the mapped dataframe
+length(normalized_counts_annot$ori_id)
+```
+***
+
+<br> <br>
+
+# Interpreting the dataset
+
+**What are the control and test conditions of the dataset?**  
+2 gene expression experiments were conducted in the study, one on identifying the effect of CPT1A gene knockdown in LNCaP-C4-2 prostate cancer cells, the other identifying the effect of CPT1A gene overexpression in prostate cancer cells. For the knockdown experiment, CPT1A in treatment group cells are knocked down by CPT1A-sh1 (CPT1A-specific shRNA), while control samples cells are treated with a control shRNA. Lentiviral transfection was used to produce the CPT1A overexpression cells. For the control samples for the overexpression experiment, the authors did not mention the control conditions in the method section, but most likely they should have used empty lentiviral vector backbones.  
+
+**Why is the dataset of interest to you?**  
+This dataset was of interest to me because it investigates the role of a gene (CPT1A) that is essential in fatty acid metabolism in promoting cancer cell growth and proliferation.  
+
+**Were there expression values that were not unique for specific genes? How did you handle these?**  
+There was no expression values that were not unique for any specific gene.  
+
+**Were there expression values that could not be mapped to current HUGO symbols?**  
+No. All expression values are current HUGO symbols, and so they can all be mapped to current HUGO symbols.  
+
+**How many outliers were removed?**  
+No outliers were removed.  
+
+**How did you handle replicates?**  
+The replicates of the same control/test conditions are assigned the same cell_type in the samples data frame: "KD_C", "KD_S", "OE_C", "OE_S", with "KD" standing for knockdown and "OE" standing for overexpression. "_C" are control samples, and "_S" are experimental samples. These 4 different cell types are indicated for TMM normalization. 
+
+**What is the final coverage of your dataset?**  
+The final coverage of my dataset is 12801 genes. 
+
+<br> <br>
+
+# Citations
+
+Zhu Y, Davis S, Stephens R, Meltzer PS, Chen Y (2008). “GEOmetadb: powerful alternative search engine for the Gene Expression Omnibus.” Bioinformatics (Oxford, England), 24(23), 2798–2800.  
+Chen Y, Lun AAT, Smyth GK (2016). “From reads to genes to pathways: differential expression analysis of RNA-Seq experiments using Rsubread and the edgeR quasi-likelihood pipeline.” F1000Research, 5, 1438.  
+Durinck S, Moreau Y, Kasprzyk A, Davis S, De Moor B, Brazma A, Huber W (2005). “BioMart and Bioconductor: a powerful link between biological databases and microarray data analysis.” Bioinformatics, 21, 3439–3440.  
+Isserlin R (2022). "BCB420 lectures". University of Toronto. 
+
+<br> <br>
