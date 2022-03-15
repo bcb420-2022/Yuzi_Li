@@ -73,9 +73,7 @@ samples <- cbind(samples, sample_number = c(1:10))
 rownames(samples) <- colnames(cpt1a_exp)[2:11]
 samples
 ```
-<br>
-
-Table 1. CPT1A knockdown and overexpression experiments sample groups. KD_C: knockdown controls; KD_S: kockdown treatments; OE_C: overexpression controls; OE_S: overexpression treatments. Each sample has a unique sample number.  
+***Table 1. CPT1A knockdown and overexpression experiments sample groups.*** KD_C: knockdown controls; KD_S: kockdown treatments; OE_C: overexpression controls; OE_S: overexpression treatments. Each sample has a unique sample number.  
 
 <br>
 
@@ -105,11 +103,14 @@ rownames(filtered_data_matrix) <- cpt1a_exp_filtered$Gene
 ### Normalization results
 
 Created density plots and box plots of the data set before and after TMM normalization:  
-![***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization. There is only slight change in density plots after normalization. ](./a2_imgs/cpt1a_density.png)
-![***Figure 2. Boxplots of gene expression data (log2-cpm) before and after TMM normalization.*** Left: boxplot of CPT1A experiments gene expression before TMM normalization. Right: boxplot of CPT1A experiments gene expression after TMM normalization. Green dashed lines indicate the median of the all sample data. The change in gene expression distributions is more obvious in the boxplots. ](./a2_imgs/cpt1a_boxplots.png)
+![***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization. There is only slight change in density plots after normalization. ](./a2_imgs/cpt1a_density.png)  
+***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization. There is only slight change in density plots after normalization.  
+![***Figure 2. Boxplots of gene expression data (log2-cpm) before and after TMM normalization.*** Left: boxplot of CPT1A experiments gene expression before TMM normalization. Right: boxplot of CPT1A experiments gene expression after TMM normalization. Green dashed lines indicate the median of the all sample data. The change in gene expression distributions is more obvious in the boxplots. ](./a2_imgs/cpt1a_boxplots.png)  
+***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization. There is only slight change in density plots after normalization.  
 
 Created MDS plot to inspect sample separation. The sample groups data appear to be well separated, and there appears to be low technical variation:  
-![***Figure 3. The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance.*** Different colors indicate different cell types. The sample groups data appear to be well separated. ](./a2_imgs/cpt1a_mds.png)
+![***Figure 3. The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance.*** Different colors indicate different cell types. The sample groups data appear to be well separated. ](./a2_imgs/cpt1a_mds.png)  
+***Figure 3. The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance.*** Different colors indicate different cell types. The sample groups data appear to be well separated.  
 
 ***
 
