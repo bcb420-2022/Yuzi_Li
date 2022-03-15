@@ -7,6 +7,7 @@ output:
 
 Name: Yuzi Li  
 Student Number: 1005131947  
+Journal Entry: [Assignment 2 Journal](https://github.com/bcb420-2022/Yuzi_Li/wiki/4.-Assignment-2:-Differential-gene-expression-and-preliminary-ORA)
 
 ***
 
@@ -72,6 +73,9 @@ samples <- cbind(samples, sample_number = c(1:10))
 rownames(samples) <- colnames(cpt1a_exp)[2:11]
 samples
 ```
+<br>
+
+Table 1. CPT1A knockdown and overexpression experiments sample groups. KD_C: knockdown controls; KD_S: kockdown treatments; OE_C: overexpression controls; OE_S: overexpression treatments. Each sample has a unique sample number.  
 
 <br>
 
@@ -101,11 +105,11 @@ rownames(filtered_data_matrix) <- cpt1a_exp_filtered$Gene
 ### Normalization results
 
 Created density plots and box plots of the data set before and after TMM normalization:  
-![Density plots of gene expression data (log2-cpm) before and after normalization](./a2_imgs/cpt1a_density.png)
-![Boxplots of gene expression data (log2-cpm) before and after TMM normalization](./a2_imgs/cpt1a_boxplots.png)
+![***Figure 1. Density plots of gene expression data (log2-cpm) before and after normalization.*** Left: density plot of CPT1A experiments gene expression before TMM normalization. Right: density plot of CPT1A experiments gene expression after TMM normalization. There is only slight change in density plots after normalization. ](./a2_imgs/cpt1a_density.png)
+![***Figure 2. Boxplots of gene expression data (log2-cpm) before and after TMM normalization.*** Left: boxplot of CPT1A experiments gene expression before TMM normalization. Right: boxplot of CPT1A experiments gene expression after TMM normalization. Green dashed lines indicate the median of the all sample data. The change in gene expression distributions is more obvious in the boxplots. ](./a2_imgs/cpt1a_boxplots.png)
 
 Created MDS plot to inspect sample separation. The sample groups data appear to be well separated, and there appears to be low technical variation:  
-![The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance](./a2_imgs/cpt1a_mds.png)
+![***Figure 3. The MDS plot showing top 2 dimensions explaining 43% and 38% of sample data groups variance.*** Different colors indicate different cell types. The sample groups data appear to be well separated. ](./a2_imgs/cpt1a_mds.png)
 
 ***
 
@@ -179,7 +183,7 @@ I used the benjamini-hochberg method for p-value correction because it is not ov
 
 Build volcano plot for knockdown experiment: 
 
-```{r, message = FALSE, warning=FALSE, fig.cap="Volcano plot for CPT1A knockdown experiment samples"}
+```{r, message = FALSE, warning=FALSE, fig.cap="***Figure 4. Volcano plot showing CPT1A knockdown differentially expressed genes.*** Down-regulated genes are in blue, up-regulated genes are in red, and CPT1A is in green. CPT1A has significantly lower expression compared to the expression pattern of all genes."}
 # Assign colours to genes: up-regulated is red, down-regulated is blue
 colours <- vector(mode="character", length=nrow(qlf_hits_kd))
 colours[] <- 'grey'
@@ -206,7 +210,7 @@ This Volcano plot is as expected as the CPT1A expression is significantly lower 
 
 Build volcano plot for overexpression experiment: 
 
-```{r, message = FALSE, warning=FALSE, fig.cap="Volcano plot for CPT1A overexpression experiment samples"}
+```{r, message = FALSE, warning=FALSE, fig.cap="***Figure 5. Volcano plot showing CPT1A overexpression differentially expressed genes.*** Down-regulated genes are in blue, up-regulated genes are in red, and CPT1A is in green. CPT1A has significantly higher expression compared to the expression pattern of all genes."}
 # Assign colours to genes: up-regulated is red, down-regulated is blue
 colours <- vector(mode="character", length=nrow(qlf_hits_oe))
 colours[] <- 'grey'
@@ -227,6 +231,7 @@ legend(1.8, 7, legend=c("down-regulated genes","up-regulated genes", "non-signif
        fill = c("blue", "red", "grey", "green"), cex = 0.6)
 ```
 
+
 <br>
 
 This Volcano plot is as expected as the CPT1A expression is significantly higher in the overexpression samples.  
@@ -237,7 +242,7 @@ This Volcano plot is as expected as the CPT1A expression is significantly higher
 
 Create heat map for knockdown experiment:
 
-```{r, message = FALSE, warning=FALSE, fig.cap="Heat map for CPT1A knockdown experiment samples"}
+```{r, message = FALSE, warning=FALSE, fig.cap="***Figure 6. Heat map showing CPT1A knockdown differentially expressed genes.*** Down-regulated genes are in blue and up-regulated genes are in red. The knockdown control samples and experimental samples are in their own clusters."}
 # Get top hit gene names
 top_hits_kd <- rownames(qlf_hits_kd)[qlf_hits_kd$PValue < 1e-7]
 # Calculate logCPM
@@ -259,7 +264,7 @@ Heatmap(as.matrix(hm_matrix_kd_top),
         cluster_columns = TRUE, show_column_dend = TRUE,
         col=heatmap_col, show_column_names = TRUE, 
         show_row_names = FALSE, show_heatmap_legend = TRUE, 
-        column_title = "CPT1A kockdown experiment samples")
+        column_title = "CPT1A knockdown experiment samples")
 ```
 
 <br>
@@ -268,7 +273,7 @@ From the heat map, I can see that the conditions cluster together: the knockdown
 
 Create heat map for overexpression experiment: 
 
-```{r, message = FALSE, warning=FALSE, fig.cap="Heat map for CPT1A overexpression experiment samples"}
+```{r, message = FALSE, warning=FALSE, fig.cap="***Figure 7. Heat map showing CPT1A overexpression differentially expressed genes.*** Down-regulated genes are in blue and up-regulated genes are in red. The overexpression control samples and experimental samples are in their own clusters."}
 # Get top hit gene names
 top_hits_oe <- rownames(qlf_hits_oe)[qlf_hits_oe$PValue < 1e-7]
 # Calculate logCPM
@@ -292,6 +297,7 @@ Heatmap(as.matrix(hm_matrix_oe_top),
         show_row_names = FALSE, show_heatmap_legend = TRUE, 
         column_title = "CPT1A overexpression experiment samples")
 ```
+
 
 <br>
 
@@ -335,7 +341,6 @@ write.table(x=downreg_genes_oe,
             row.names = FALSE,col.names = FALSE,quote = FALSE)
 ```
 
-I moved these gene lists text files to a directory called "thresholded_gene_list" manually.  
 
 <br>
 
@@ -345,13 +350,13 @@ I used G:Profiler because it is a suitable method for analyzing over-representat
 
 All G:Profiler queries were run using the following parameters:  
 
-![G:Profiler parameters for running CPT1A experiment differentially expressed genes](./a2_imgs/gprofiler_param.PNG)  
+![***Figure 8. G:Profiler parameters for running CPT1A experiment differentially expressed genes.***](./a2_imgs/gprofiler_param.PNG)  
 
 I used annotation data from GO biological process, Reactome, and WikiPathways. I used GO BP because it has the most complete set of annotations and describes the biological processes that the genes are involved in. I used Reactome because it has very detailed terms. I also used WikiPathways because I want to include more annotation databases so that there is a overall higher coverage of genes.  
 
 I also selected the Ensembl IDs with the most GO annotations.  
 
-For all below analyses on terms, I set the term size range to 1-200.  
+For all below analyses on terms, I set the term size range to 1-200 to understand the specific processes regulated.  
 
 <br>
 
@@ -363,15 +368,15 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * Result from GO BP shows that many differentially expressed genes in CPT1A knockdown cells are involved in different mitosis-related events as well as cell cycle checkpoint signaling. Specifically, I noticed that some of these genes are involved in double-strand breaks repair and break-induced replication:  
 
-![CPT1A knockdown all differentially expressed genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_whole_gobp_200.PNG)  
+![***Figure 9. CPT1A knockdown all differentially expressed genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_whole_gobp_200.PNG)  
 
 * Result from Reactome is similar to terms from GO BP: 
 
-![CPT1A knockdown all differentially expressed genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_whole_reactome_200.PNG)  
+![***Figure 10. CPT1A knockdown all differentially expressed genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_whole_reactome_200.PNG)  
 
 * Result from WikiPathways shows that these genes are also involved in fatty-acid metabolism and gastric cancer. This is expected because CPT1A encodes for carnitine palmitoyltransferase 1A, which is a protein essential for fatty acid oxidation:  
 
-![CPT1A knockdown all differentially expressed genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_whole_wikipath_200.PNG)  
+![***Figure 11. CPT1A knockdown all differentially expressed genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_whole_wikipath_200.PNG)  
 
 **Results using the up-regulated genes:**  
 
@@ -379,11 +384,11 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * The resulting terms are very similar to the result from using the whole list:  
 
-![CPT1A knockdown up-regulated genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_upreg_gobp_200.PNG)  
+![***Figure 12. CPT1A knockdown up-regulated genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_upreg_gobp_200.PNG)  
 
-![CPT1A knockdown up-regulated genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_upreg_reactome_200.PNG)  
+![***Figure 13. CPT1A knockdown up-regulated genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_upreg_reactome_200.PNG)  
 
-![CPT1A knockdown up-regulated genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_upreg_wikipath_200.PNG)  
+![***Figure 14. CPT1A knockdown up-regulated genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_upreg_wikipath_200.PNG)  
 
 **Results using the down-regulated genes:**  
 
@@ -391,11 +396,11 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * The resulting terms are different from the top terms obtained using the whole list. This time, the terms are more related to amino acid biosynthesis and positive regulations on translation and transcription in response to stress. With the lack of CPT1A, I expect to see such a decrease in anabolic activities because the cells cannot efficiently oxidize fatty acids, which leads to energy deficiency:  
 
-![CPT1A knockdown down-regulated genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_downreg_gobp_200.PNG)  
+![***Figure 15. CPT1A knockdown down-regulated genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_downreg_gobp_200.PNG)  
 
-![CPT1A knockdown down-regulated genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_downreg_reactome_200.PNG)  
+![***Figure 16. CPT1A knockdown down-regulated genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_downreg_reactome_200.PNG)  
 
-![CPT1A knockdown down-regulated genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_kd_downreg_wikipath_200.PNG)  
+![***Figure 17. CPT1A knockdown down-regulated genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_kd_downreg_wikipath_200.PNG)  
 
 <br>
 
@@ -407,11 +412,11 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * Much of the resulting terms are associated with regulation of ubiquitin-mediated protein catabolism. This might mean that when CPT1A is overexpressed, many proteins are folded incorrectly, and this triggers the action of ubiquitin-mediated protein degradation. Some other differentially expressed genes in CPT1A overexpression experiment are related to cell cycle transitions:  
 
-![CPT1A overexpression all differentially expressed genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_whole_gobp_200.PNG)  
+![***Figure 18. CPT1A overexpression all differentially expressed genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_whole_gobp_200.PNG)  
 
-![CPT1A overexpression all differentially expressed genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_whole_reactome_200.PNG)  
+![***Figure 19. CPT1A overexpression all differentially expressed genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_whole_reactome_200.PNG)  
 
-![CPT1A overexpression all differentially expressed genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_whole_wikipath_200.PNG)  
+![***Figure 20. CPT1A overexpression all differentially expressed genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_whole_wikipath_200.PNG)  
 
 **Results using the up-regulated genes:**  
 
@@ -419,11 +424,11 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * The resulting terms are quite similar to the result from using the whole list, except that I see some more terms associated with energy metabolism (glycolysis, gluconeogenesis, etc.). This might be explained by the fact that breaking down all the misfolded proteins requires a lot of energy:  
 
-![CPT1A overexpression up-regulated genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_upreg_gobp_200.PNG)  
+![***Figure 21. CPT1A overexpression up-regulated genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_upreg_gobp_200.PNG)  
 
-![CPT1A overexpression up-regulated genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_upreg_reactome_200.PNG)  
+![***Figure 22. CPT1A overexpression up-regulated genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_upreg_reactome_200.PNG)  
 
-![CPT1A overexpression up-regulated genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_upreg_wikipath_200.PNG)  
+![***Figure 23. CPT1A overexpression up-regulated genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_upreg_wikipath_200.PNG)  
 
 **Results using the down-regulated genes:**  
 
@@ -431,11 +436,11 @@ For all below analyses on terms, I set the term size range to 1-200.
 
 * There are very few terms, but they mostly refer to ribosome production and translation. This means that there is less translation going on in the CPT1A-overexpressing cells:  
 
-![CPT1A overexpression down-regulated genes over-representation analysis results from GO: BP, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_downreg_gobp_200.PNG)  
+![***Figure 24. CPT1A overexpression down-regulated genes over-representation analysis results from GO: BP, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_downreg_gobp_200.PNG)  
 
-![CPT1A overexpression down-regulated genes over-representation analysis results from Reactome, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_downreg_reactome_200.PNG)  
+![***Figure 25. CPT1A overexpression down-regulated genes over-representation analysis results from Reactome, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_downreg_reactome_200.PNG)  
 
-![CPT1A overexpression down-regulated genes over-representation analysis results from WikiPathways, term size = 200](./a2_imgs/gprofiler_cpt1a_oe_downreg_wikipath_200.PNG)  
+![***Figure 26. CPT1A overexpression down-regulated genes over-representation analysis results from WikiPathways, term size = 200.***](./a2_imgs/gprofiler_cpt1a_oe_downreg_wikipath_200.PNG)  
 
 ***
 
